@@ -1,5 +1,3 @@
-//使用setTimeout代替setInterval强制函数串行顺序执行
-
 setInterval(function() {
   console.log('+++++');
   newWork();
