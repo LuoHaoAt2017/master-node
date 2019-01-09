@@ -19,10 +19,6 @@ server.on('close', function() {
   console.log('server closed');
 });
 
-server.on('listening', function() {
-  console.log('server is listening at port ', port);
-});
-
 //step two: 接受客户端的连接
 server.on('connection', function(socket) {
 
@@ -65,6 +61,3 @@ server.on('connection', function(socket) {
     }
   });
 });
-
- 
-
