@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=yes">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Jiumo Search 鸠摩搜书 - 文档搜索引擎</title>
+<meta name="description" content="鸠摩搜索引擎">
+<meta name="keywords" content="鸠摩搜书, 电子书, 摩鸠, 鸠魔, 鸩摩, 九磨, 官网, 就摸, 鸠, kindle, ebook, jiumosoushu, 找书">
+
+<link rel="shortcut icon" href="images/favicon.png" type="image/png">
+<link id="theme" href="Style/Main_bright.css?v=20170733" rel="stylesheet" type="text/css">
+<link id="theme_main" href="Style/Main.css?v=20170733" rel="stylesheet" type="text/css">
+
+
+<link rel="apple-touch-icon" sizes="57x57" href="images/apple/apple-57.png" />
+<link rel="apple-touch-icon" sizes="72x72" href="images/apple/apple-72.png" />
+<link rel="apple-touch-icon" sizes="114x114" href="images/apple/apple-114.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="images/apple/apple-144.png" />
+
+<!-- <meta name="apple-mobile-web-app-capable" content="yes"> -->
+<meta name="apple-mobile-web-app-title" content="鸠摩搜索">
+
+<!--
+<script type="text/javascript" src="/let_it_snow/snowstorm.js"></script>
+-->
+
+<style>
+
+ul#result-ul li>div {
+	margin-bottom: 15px;
+}
+
+.span-des {
+    line-height: 1.5em;
+    max-height: 3em;
+    overflow: hidden;
+}
+
+.wxtip{background: rgba(0,0,0,0.8); text-align: center; position: fixed; left:0; top: 0; width: 100%; height: 100%; z-index: 998; display: none;}
+.wxtip-icon{width: 52px; height: 67px; background: url(/images/weixin-tip.png) no-repeat; display: block; position: absolute; right: 20px; top: 20px;}
+.wxtip-txt{margin-top: 107px; color: #fff; font-size: 16px; line-height: 1.5;}
+
+</style>
+
+
+<script>
+
+/////////////////////////////////
+// Global Predefined Functions //
+/////////////////////////////////
+
+// global variables
+var current_theme = "bright";
+var g_ischina = true;
+var g_forced = false;
+var g_device = 'normal';
+var g_backup_hostname = 'www2.jiumodiary.com';
+var g_ip = '';
+var g_parsed = [];
+var dls_show = [];
+
+var previous_search = '';
+var current_search = '';
+
+// whether enable log info
+var log_enabled = false;
+function c_log(msg) { if(log_enabled) { console.log(msg); } return;}
+
+// disable alert
+window.alert = function () {};
+
+
+// set test variables
+function setTestVariables() {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+        var value = true;
+        if (pair[1] === "0" || pair[1] === "false") { value = false; }
+        if (pair[0] === "cn") { g_ischina = value; }
+        if (pair[0] == "log") { log_enabled = value; }
+        if (pair[0] == "forced") { g_forced = value; }
+    }
+}
+
+
+// URL direct search
+// ...
+
+
+// URL insert parameter
+// ...
+
+/////////////////////////////////
+//    Supporting Functions     //
+/////////////////////////////////
+
+
+// update share times
+function share_record(new_share, str) {
+    if (new_share) { link_clicked(str); }
+    return false;
+}
+
+
+function cronjob() {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", "cronjob.php", true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp.send();
+    return false;
+}
+
+
+
+function Pageloaded() {
+	
+	// check weixin
+	weixinTip();
+	
+	// reset backup hostname
+	if (window.location.hostname === 'www2.jiumodiary.com') {
+		g_backup_hostname = 'www.jiumodiary.com';
+	}
+    
+    // cronjob
+    cronjob();
+    
+    // set TEST variables
+    setTestVariables();
+    
+    // load wechat
+    wechat_overlay_load();
+    
+    // load google analytics
+    google_analytics();
+    
+    // load cnzz analytics
+    // cnzz_analytics();
+    
+    // set loaded
+    setCookie('loaded', "1", 30);
+    
+    // load googe ads
+    // google_ads();
+     
+    // init ip
+    // init_ip();
+    
+    
+    // if not on mobile device, focus
+    if (window.innerWidth > 700) {
+        if (document.getElementById("SearchWord") !== null) {
+            document.getElementById("SearchWord").focus();
+        }
+    }
+    
+    
+    return false;
+}
+
+
+function weixinTip(){
+	var ua = navigator.userAgent;
+	var isWeixin = !!/MicroMessenger/i.test(ua);
+	var isIphone = !!/iPhone OS/i.test(ua);
+	if (isWeixin) {
+		document.getElementById('JweixinTip').style.display='block';
+		if (isIphone) {
+			document.getElementById('wxtip-txt').innerHTML="请点击右上角<br/>选择在Safari中打开";
+		} else {
+			document.getElementById('wxtip-txt').innerHTML="请点击右上角<br/>选择在浏览器中打开";
+		}
+	}
+}
+
+
+function google_analytics() {
+    
+    (function (i, s, o, g, r, a, m) {
+     i['GoogleAnalyticsObject'] = r;
+     i[r] = i[r] || function () {
+     (i[r].q = i[r].q || []).push(arguments)
+     }, i[r].l = 1 * new Date();
+     a = s.createElement(o),
+     m = s.getElementsByTagName(o)[0];
+     a.async = 1;
+     a.src = g;
+     m.parentNode.insertBefore(a, m)
+     })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-63432350-1', 'auto');
+    ga('send', 'pageview');
+}
+
+
+function cnzz_analytics() {
+	var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+	document.body.innerHTML += "<div style='display:none'>" + (unescape("%3Cspan id='cnzz_stat_icon_1268876778'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s22.cnzz.com/z_stat.php%3Fid%3D1268876778' type='text/javascript'%3E%3C/script%3E")) + "</div>";
+}
+
+
+function google_ads() {
+	(adsbygoogle = window.adsbygoogle || []).push({
+	    google_ad_client: "ca-pub-4551030671055618",
+	    enable_page_level_ads: true
+	  });
+}
+
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+
+
+function themeChanged() {
+    
+    var theme_link = document.getElementById("theme");
+    if (current_theme === "dark") { current_theme = "bright"; }
+    else { current_theme = "dark"; }
+    setCookie("theme", current_theme, 30);
+    theme_link.setAttribute("href", "Style/Main_" + current_theme + ".css?v=20170733");
+    
+    // notify server client theme changed
+    link_clicked('theme changed to ' + current_theme);
+    return false;
+}
+
+
+function load_mainpage() {
+    
+    var main_form = document.getElementById("main-form");
+    var main_form_class = main_form.getAttribute("class");
+    if (main_form_class === "mainform_search") {
+        window.location = window.location.pathname;
+    } else if (main_form_class === "mainform") {
+        var image_link = "http://blog.jiumodiary.com/2017/04/amv-%E5%90%9B%E3%81%AE%E5%90%8D%E3%81%AF%E3%80%82-faded/";
+        if (image_link.length > 0) {
+            window.open(image_link, "_blank");
+        }
+    }
+    
+    return false;
+}
+
+</script>
+
+
+<!-- google ads 
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+-->
+
+</head>
+
+
+<body onload="Pageloaded();" >
+	
+<div class="wxtip" id="JweixinTip" style="display:none;">
+<span class="wxtip-icon"></span>
+<p class="wxtip-txt" id="wxtip-txt">请点击右上角<br/>选择在浏览器中打开</p>
+</div>
+
+<div style="width:100%;height:auto;">
+
+<div id="logo" class="top-wrapper" >
+<div class="logo">
+
+<div class="icons icon-title" style="margin-left:40px"></div>
+
+
+<div id="setting-ul"  style="margin-top:10px;">
+<div class="icons-group">
+<a id="donate-div"  href="donate.php" target="_blank" onclick="link_clicked('donate clicked ')" title="donate"><div class="icons icon-item-big icon-donate-big"></div></a>
+    <a id="theme-div" href="#" onclick="return themeChanged();" title="change theme"><div class="icons icon-item icon-theme"></div></a>
+    <a href="info.php" target="_blank" onclick="link_clicked('info clicked')"  title="site info"><div id="info-div" class="icons icon-item icon-info"></div></a>
+</div>
+
+</div>
+
+
+
+<div id="bdshare-div" style="margin-top:5px;">
+
+
+<div id="share-buttons-cn"  class="icons-group">
+<a id="wechat-share" title="微信公众号" style="cursor:pointer;" onclick="wechat_overlay_show(); share_record(true, 'shared to wechat'); return false;"><div class="icons icon-item-big-extra icon-wechat-big"></div></a>
+<a href="http://service.weibo.com/share/share.php?url=http%3A%2F%2Fwww.jiumodiary.com&searchPic=true" title="分享到新浪微博" target="_blank" onclick="window.open('http://service.weibo.com/share/share.php?url=http://' + encodeURIComponent(window.location.hostname) + '&title=' + encodeURIComponent(document.title)); share_record(true, 'shared to Weibo'); return false;"><div class="icons icon-item icon-weibo"></div></a>
+<a href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http%3A%2F%2Fwww.jiumodiary.com" target="_blank" title="分享到QQ空间" onclick="window.open('http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http://' + encodeURIComponent(window.location.hostname) + '&title=' + encodeURIComponent(document.title));  share_record(true, 'shared to qqzone'); return false;"><div class="icons icon-item icon-qqzone"></div></a>
+<a href="http://www.douban.com/recommend/?url=http%3A%2F%2Fwww.jiumodiary.com" target="_blank" title="分享到豆瓣" onclick="window.open('http://www.douban.com/recommend/?url=http://' + encodeURIComponent(window.location.hostname) + '&title=' + encodeURIComponent(document.title) + ' (' + encodeURIComponent(document.URL) + ')');  share_record(true, 'shared to douban'); return false;"><div class="icons icon-item icon-douban"></div></a>
+<a href="https://app.yinxiang.com/clip.action?url=http%3A%2F%2Fwww.jiumodiary.com" target="_blank" title="分享到印象笔记" onclick="window.open('https://app.yinxiang.com/clip.action?url=' + encodeURIComponent(document.URL) + '&title=' + encodeURIComponent(document.title) + ' (' + encodeURIComponent(document.URL) + ')');   share_record(true, 'shared to evernote_cn'); return false;"><div class="icons icon-item icon-evernote"></div></a>
+</div>
+
+
+
+</div>
+
+</div>
+</div>
+
+
+
+<div id="main-form"    class="mainform">
+<form id="SearchForm" onsubmit="return startsearch();">
+
+<div id="row-0-space-1" > </div>
+
+<div id="row-1" class="row1" >
+
+<a id="row-1-link" href="#" onclick="return load_mainpage();">
+
+<div id="front-info" style="">
+    <div style='display: inline-block; color: #eee; font-size: 11px; vertical-align: middle;'>AMV-君の名は</div>
+</div>
+
+<img id="front-image"  alt="鸠摩搜书" src="/images/front/eleps.png" title="">
+</a>
+
+</div>
+
+<div id="row-1-space-2"> </div>
+
+<!--<div id="notification" style="display:none; width: 100%; text-align: center; color: green;">鸠摩已发现最近直链资源下载变慢的问题, 正在解决中~</div>-->
+<!--<div id="notification" style="width: 100%; text-align: center; color: green;">通知: 鸠摩将于今日2:00AM(北京时间)进行系统维护, 预计4:00AM恢复搜索~</div>-->
+<!--<div id="notification" style="width: 100%; text-align: center; color: green;">新浪爱问文件很多无法下载, 暂时去掉了这部分查询结果, 其它资源添加中~</div>-->
+
+<div id="row-2" class="row2">
+<input id="SearchWord" type="text" maxlength="2048"  autocomplete="off" class="invert">
+</div>
+
+
+<div id="row-2-space-3"> </div>
+
+<div id="row-3" class="row3">
+<button id="SearchButton" type="submit" value="Search" class="button">Search</button>
+</div>
+
+</form>
+
+
+<div id="icon-wrapper" class="row4"></div>
+
+
+<div id="filter-div" style="text-align: center; margin-top: 50px;">
+
+<!--
+<a href="#" style="font-size:15px; font-weight:bold;" onclick="wechat_overlay_show(); share_record(true, 'shared to wechat'); return false;">
+鸠摩微信订阅号: jiumoebook
+<span class="icons icon-barcode-tiny"></span>
+</a>
+-->
+
+
+<a href="#" style="font-size:15px; font-weight:bold;" onclick="wechat_overlay_show(); share_record(true, 'shared to wechat'); return false;">
+鸠摩微信订阅号
+<span class="icons icon-barcode-tiny"></span>
+</a>
+<span style="display:inline-block; margin-left:5px; margin-right:5px; font-size:17px; font-weight:bold;">|</span>
+
+<!--
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="https://union-click.jd.com/jdc?e=0&p=AyIHVCtaJQMiQwpDBUoyS0IQWlALHEFZC0FETlcNVQtHRUZcTF0QRRoLAw4GSRpETEdOWltJC1BWRFkWU1cWAxMGVgdaCQMOBkkbWhQDERtVCQlLXkVZFl5rF2YTUTdcCEJie1svfSFxfVB9LkMLZQ4eaVYaWxMeEgdJGFIEAREMVRNQEAciBmUbWhQDFwNVGFkXMiIHVSsQewMiB1QdXhAAFwBcHmsVBhIHXB1SEwsXAFEaaxIySVcHQQBNRk5ZZStrJTIiBmUa&t=W1dCFBBFC1FMWQ8EAEAdQFkJBQhLXEhCC1pFFB4TG1QEAlBeTwkHSx5BVExEHRdYFAMTBEkaRxQeExtVGloUAQ4HR0kFSVVMRBA%3D">
+本周京东纸质书榜单
+<span class="icons icon-bestseller-tiny"></span>
+</a>
+-->
+
+<!--
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="http://20.80kf.cn/index.php?r=l&kw=图书">
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="http://www.hqq114.com/index.php?r=l&kw=图书">
+use encode for ie not recognize -->
+
+
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="http://tytquan.com/index.php?r=l&kw=%E7%95%85%E9%94%80%E4%B9%A6">
+淘宝图书优惠券
+<span class="icons icon-bestseller-tiny"></span>
+</a>
+
+<!--
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="http://tytquan.com">
+淘宝9.9包邮优惠券 ^_^
+</a>
+-->
+
+<!--
+<a rel="noreferrer external nofollow" target="_blank" style="font-size:15px; font-weight:bold;" href="https://item.taobao.com/item.htm?id=562579552647">
+淘宝小店: "進撃の果子猪"
+</a>
+-->
+
+</div>
+
+</div>
+
+<div id="main-panel" style="">
+
+
+<div id="result-panel" style="display: none;">
+
+<div id="result-panel-left">  </div>
+
+
+
+<div id="google-panel" class="google-panel-width" style="vertical-align:top; display: inline-block;">
+<table style="width:100%">
+
+<tr>
+<td style="height: 20px;">
+<span id="format-loading" style="width: 100%; display: none; text-align: right;line-height: 100%;vertical-align: middle;height: 16px;"><img src="images/loading2_bright.gif"></span>
+<span id = "format-filter" style="width: 100%; display: inline-block; text-align: right; "></span>
+</td>
+</tr>
+
+<tr>
+<td style="width: 100%">
+
+<div id="google-div" >
+
+
+
+<div id="google-result-div" style="position: relative;" >
+<ul id="result-ul" style="padding-left: 10px; width: 95%; max-width: 600px;"></ul>
+<div id="loading-icon"  style="display:none;">
+<img src="images/loading_bright.gif">
+</div>
+</div>
+
+</div>
+
+</td>
+</tr>
+</table>
+
+</div>
+
+
+
+
+
+
+<div id="result-panel-middle" class="result-panel-middle-hide"> </div>
+
+
+
+
+
+<div id="forum-panel" style="vertical-align:top; display: inline-block;">
+<table style="width: 100%;">
+
+<tr>
+<td style="height: 20px;">
+<span id = "priced-filter"  style="width: 100%; display: inline-block; text-align: right; ">BBS</span>
+</td>
+</tr>
+
+<tr>
+<td style="width: 100%">
+
+<div id="forum-div">
+</div>
+
+</td>
+</tr>
+</table>
+</div>
+
+
+
+
+
+</div>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+
+function status_result(action, c, q, status, log, data_length) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", "status_result.php", true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp.send("action=" + encodeURIComponent(action) + "&c=" + encodeURIComponent(c) + "&q=" + encodeURIComponent(q) + "&status=" + encodeURIComponent(status) + "&log=" + encodeURIComponent(log) + "&data_length=" + encodeURIComponent(data_length));
+    
+    return false;
+}
+
+
+
+function link_clicked(pagename) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", "link_clicked.php", true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp.send("q=" + encodeURIComponent(pagename));
+    return false;
+}
+
+
+
+////////////////////////
+
+var g_word = '';
+var status_hub = [];
+var status_hub_count = 0;
+
+var g_id = -1;
+function ajax_fetch_hub(id, set) {
+
+	var is_received = false;
+	
+    // fetch cache
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+        	if (is_received) {c_log('abandent main'); return;}
+        	is_received = true;
+        	
+        	if (g_id !== id) {return;}
+            var received_text = xmlhttp.responseText;
+            var result_array = JSON.parse(received_text);
+            
+            var status = result_array['status'];
+            var status_extra = result_array['status_extra'];
+            var log = result_array['log'];
+            status_hub_count = parseInt(result_array['count']);
+            var patch_arr = result_array['sources'];
+
+            c_log( status + ': ' + log + ', new_count:' + status_hub_count);   
+			if (status === 'succeed') {
+				status_hub = status_hub.concat(patch_arr);
+				if (status_extra !== 'completed') { 
+					ajax_fetch_hub(id, status_hub_count); 
+				}
+			}
+			render(status_extra);
+            return;
+        }
+    };
+    
+    var xmlhttp2 = new XMLHttpRequest();
+    xmlhttp2.onreadystatechange = function () {
+        if (xmlhttp2.readyState === 4 && xmlhttp2.status === 200) {
+        	if (is_received) {c_log('abandent backup'); return;}
+        	is_received = true;
+        	
+        	if (g_id !== id) {return;}
+            var received_text = xmlhttp2.responseText;
+            var result_array = JSON.parse(received_text);
+            
+            var status = result_array['status'];
+            var status_extra = result_array['status_extra'];
+            var log = result_array['log'];
+            status_hub_count = parseInt(result_array['count']);
+            var patch_arr = result_array['sources'];
+
+            c_log( status + ': ' + log + ', new_count:' + status_hub_count);   
+			if (status === 'succeed') {
+				status_hub = status_hub.concat(patch_arr);
+				if (status_extra !== 'completed') { 
+					ajax_fetch_hub(id, status_hub_count); 
+				}
+			}
+			render(status_extra);
+            return;
+        }
+    };
+    
+    xmlhttp.open("POST", "ajax_fetch_hubs.php", true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp.send("id=" + encodeURIComponent(id) + "&set=" + encodeURIComponent(set));
+    c_log("ajax request main: id=" + encodeURIComponent(id) + "&set=" + encodeURIComponent(set));
+    
+    xmlhttp2.open("POST", "https://" + g_backup_hostname + "/ajax_fetch_hubs.php", true);
+    xmlhttp2.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp2.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp2.send("id=" + encodeURIComponent(id) + "&set=" + encodeURIComponent(set));
+    c_log("ajax request backup: id=" + encodeURIComponent(id) + "&set=" + encodeURIComponent(set));
+}
+
+
+function init_fetch_hub(word) {
+	
+	var time_int = new Date().getTime();
+	var is_received = false;
+	
+    // fetch cache
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+        	if (is_received) {c_log('init abandent main'); return;}
+        	is_received = true;
+        	
+            var received_text = xmlhttp.responseText;
+            var result_array = JSON.parse(received_text);
+            var status = result_array['status'];
+            
+            if (status !== 'succeed') {
+            	hide_loading();
+            	if (status === 'exceed') { exceed_alert(); return;}
+            	if (status === 'tooshort') { tooshort_alert(); return;}
+            	notfound_alert(); return;
+            }
+            
+            status_hub = result_array['sources'];
+            status_hub_count = parseInt(result_array['count']);
+            g_id = result_array['id'];
+            c_log('g_id received: ' + g_id);
+
+            ajax_fetch_hub(g_id, status_hub_count);
+            render('more');
+            return;
+        }
+    };
+    
+    var xmlhttp2 = new XMLHttpRequest();
+    xmlhttp2.onreadystatechange = function () {
+        if (xmlhttp2.readyState === 4 && xmlhttp2.status === 200) {
+        	if (is_received) {c_log('init abandent backup'); return;}
+        	is_received = true;
+        	
+            var received_text = xmlhttp2.responseText;
+            var result_array = JSON.parse(received_text);
+            var status = result_array['status'];
+            
+            if (status !== 'succeed') {
+            	hide_loading();
+            	if (status === 'exceed') { exceed_alert(); return;}
+            	if (status === 'tooshort') { tooshort_alert(); return;}
+            	notfound_alert(); return;
+            }
+            
+            status_hub = result_array['sources'];
+            status_hub_count= parseInt(result_array['count']);
+            g_id = result_array['id'];
+            c_log('g_id received: ' + g_id);
+
+            ajax_fetch_hub(g_id, status_hub_count);
+            render('more');
+            return;
+        }
+    };
+    
+    xmlhttp.open("POST", "init_hubs.php", true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp.send("q=" + encodeURIComponent(word) + '&remote_ip=' + g_ip + '&time_int=' + time_int);
+    c_log('init request main: ' +  "q=" + encodeURIComponent(word) + '&remote_ip=' + g_ip + '&time_int=' + time_int);
+    
+    xmlhttp2.open("POST", "https://" + g_backup_hostname + "/init_hubs.php", true);
+    xmlhttp2.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp2.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xmlhttp2.send("q=" + encodeURIComponent(word) + '&remote_ip=' + g_ip + '&time_int=' + time_int);
+    c_log('init request backup: ' +  "q=" + encodeURIComponent(word) + '&remote_ip=' + g_ip + '&time_int=' + time_int);
+}
+
+
+
+function render(status_extra) {
+	
+	c_log('render - ' + status_extra + ' - ' + status_hub_count);
+	
+	// loading status
+	if (status_extra !== 'completed') {
+		more_loading();
+	} else {
+		hide_loading();
+	}
+	
+	// start rernder
+	view = [];
+	uls = [];
+	if ( window.innerWidth <= 700 ) {
+		render_mobile();
+	} else {
+		render_normal();
+	}
+	localbook_refresh();
+	
+	// no succeed
+	if (status_extra === 'completed' && view.length === 0) {
+		notfound_alert();
+		return;
+	}
+	
+}
+
+
+function render_mobile() {
+	
+	for (var i in status_hub) {
+		var view_type = status_hub[i]['view_type'];
+		if (status_hub[i]['details']['status'] === 'succeed') {
+			var data = status_hub[i]['details']['data'];
+			switch(view_type) {
+				case 'view_forum':
+					for (var forum in data) {
+						var inner = data[forum]['data'];
+						for (var m in inner) { inner[m]['info'] = status_hub[i]['info']; inner[m]['view_type'] = view_type;}
+						push_view_main(inner);
+					}
+					break;
+				case 'view_local':
+					data = data.slice(0, 1);
+				default:
+					for (var m in data) { data[m]['info'] = status_hub[i]['info'];  data[m]['view_type'] = view_type;}
+					push_view_main(data);
+					break;
+			}
+		}
+	}
+		
+}
+
+
+function render_normal() {
+	
+	for (var i in status_hub) {
+		var view_type = status_hub[i]['view_type'];
+		if (status_hub[i]['details']['status'] === 'succeed') {
+			var item = status_hub[i];
+			var data = status_hub[i]['details']['data'];
+			switch(view_type) {
+				case 'view_forum':
+				case 'view_sidebar':
+					split_panel();
+					push_view_sidebar(item);
+					break;
+				default:
+					for (var m in data) { data[m]['info'] = status_hub[i]['info']; data[m]['view_type'] = view_type;}
+					push_view_main(data);
+					break;
+			}
+		}
+	}	
+	
+}
+
+
+
+function startsearch() {
+    
+    var search_word = document.getElementById("SearchWord");
+    var input_keyword = search_word.value;
+    if (input_keyword.length === 0 || input_keyword === previous_search) {
+        return false;
+    }
+    current_search = input_keyword;
+    validate(input_keyword);
+    previous_search = input_keyword;
+    setTimeout(function () { previous_search = ''; }, 2000);
+    
+    return false;
+}
+
+
+function validate(input_keyword) {
+    
+    // changeUrlParam('q', input_keyword);
+    
+    // temp notification
+    var div_notification = document.getElementById("notification");
+    if (div_notification) {
+    	div_notification.style.display = 'none';
+    }
+    
+    // normal start
+    var search_button = document.getElementById("SearchButton");
+    var loading_icon = document.getElementById("loading-icon");
+    var search_site;
+    var search_url;
+    var result_panel = document.getElementById("result-panel");
+    var result_panel_middle = document.getElementById("result-panel-middle");
+    var google_div = document.getElementById("google-div");
+    var google_result_div = document.getElementById("google-result-div");
+    var format_filter = document.getElementById("format-filter");
+    var google_panel = document.getElementById("google-panel");
+    var forum_panel = document.getElementById("forum-panel");
+    var forum_div = document.getElementById("forum-div");
+    
+    
+    var main_form = document.getElementById("main-form");
+    var row_1 = document.getElementById("row-1");
+    var row_2 = document.getElementById("row-2");
+    var row_3 = document.getElementById("row-3");
+    var row_1_link = document.getElementById("row-1-link");
+    
+    var icon_wrapper = document.getElementById("icon-wrapper");
+    var theme_div = document.getElementById("theme-div");
+    
+    
+    var logo = document.getElementById("logo");
+  
+    var filter_div = document.getElementById("filter-div");
+  
+    
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    main_form.setAttribute("class", "mainform_search");
+    row_1.setAttribute("class", "row1_search");
+    row_2.setAttribute("class", "row2_search");
+    row_3.setAttribute("class", "row3_search");
+    logo.style.display = "none";
+    filter_div.style.display = "none";
+     
+    
+    result_panel_middle.setAttribute("class", "result-panel-middle-hide");
+    google_panel.setAttribute("class", "google-panel-width");
+    
+    forum_div.innerHTML = '';
+    forum_div.style.display = "none";
+    forum_panel.style.display = "none";
+    // google_result_div.style.display = "none";
+    format_filter.style.display = "none";
+    format_filter.innerHTML = "";
+    result_panel.style.display = "";
+ 
+    loading_icon.style.display = "";
+    google_div.style.display = '';
+    
+    
+    icon_wrapper.appendChild(theme_div);
+    icon_wrapper.setAttribute("class", "row4_search");
+    
+    var ul = document.getElementById("result-ul");
+    ul.innerHTML = '';
+    
+    g_parsed = [];
+    status_hub = [];
+    fetched = [];
+    hub_word = input_keyword;
+    g_id = -1;
+    view = [];
+    dls_show = [];
+    uls = [];
+    
+    // if on mobile device, removes search text
+    if (window.innerWidth <= 700) {
+        search_button.innerHTML = '';
+    }
+    init_fetch_hub(input_keyword);
+    
+    return false;
+}
+
+
+
+
+///////////////////////////////
+//   parse result related    //
+///////////////////////////////
+
+
+var format = ['PDF', 'TXT', 'MOBI', 'EPUB', 'AZW', 'DOC'];
+var format_exp = [/pdf/i, /txt/i, /mobi(?!le)/i, /epub/i, /azw/i, /doc(?!ument)/i];
+var format_other = 'OTHER';
+
+
+function get_format_exp(str) {
+    for (var i = 0; i < format.length; i++) {
+        if (format[i].toUpperCase() === str.toUpperCase() ) {
+            return format_exp[i];
+        }
+    }
+    return false;
+}
+
+
+var format_sum = [];
+function addto_format_sum(str) {
+	
+    for (var i = 0; i < format_sum.length; i++) {
+        if (format_sum[i][0] === str) {
+            format_sum[i][1] += 1;
+            return false;
+        }
+    }
+    format_sum.push([str, 1]);
+}
+
+
+
+
+function render_main (line) {
+	var content = '';
+	
+    if (line['view_type'] === 'view_local') {
+        var tag_icon = '<span style="margin-right:4px; color:white; padding: 2px 4px; border-radius:4px; background-color:rgb(160, 82, 45); font-size:13px; vertical-align:top; display:none;">⬇</span>';
+        var tag_download = '<a class="localbook_download" href="' + line['link'] + '" target="_blank" style="margin-right:10px; color:white; padding: 2px 4px; border-radius:4px; background-color: /*olive*/ #A0522D; font-size:13px; vertical-align:top; display:none;">Download</a>';
+        var link2 = line['link'].replace("http://doudouso.com", "https://dd.doudouso.com");
+        var tag_download2 = '<a class="localbook_download" href="' + link2 + '" target="_blank" style="margin-right:10px; color:white; padding: 2px 4px; border-radius:4px; background-color: /*olive*/ #A0522D; font-size:13px; vertical-align:top; display:none;">Download2</a>';
+        var tag_waiting = '<img class="localbook_waiting" src="images/waiting2.gif" style="vertical-align: middle; display:none; border-radius: 3px;">';
+        
+        // tag_download2 = '';
+        content += '<li style="list-style: none; line-height: 1.2;"><div>';
+        content += '<div><a href="#" book-data="' + line['link'] + '" onclick="return localbook_click(this);"; >' + tag_icon + '<span style="font-size: 18px; font-family: arial,sans-serif;">' + line['title'] + '</span>' + '' + '</a></div>';
+        content += '<div>' + tag_download + tag_download2 + '</div>';
+        content += '<div class="span-des" >' + line['des'] + '</div>';
+        content += '<div class="span-host" style="font-weight: bold; font-size: 13px;">' + line['log']  + '</div>';
+        content += '</div></li>';
+        return content;
+    }
+    
+    
+    if ('img_link' in line) {
+    	
+        content += '<li style="list-style:none; line-height:1.2; margin-bottom:10px;">';
+        content += '<div style="display: inline-block;max-width: 70px; width:20%; line-height:87px;height:90px;text-align:center;border: 1px solid rgba(128,128,128,0.5);">';
+        content += '<a rel="noreferrer external nofollow" href="' + line['link'] + '" target="_blank"><img src="' + line['img_link'] + '" style="vertical-align: middle; max-width:100%; max-height:100%"></a></div>';
+        // info - text frame
+        content += '<div class="priced_item_left" style="margin-left:1%; width:78%">';
+        // info - title
+        content += '<div class="title" style="line-height:1.5em; max-height:1.5em;"><a rel="noreferrer external nofollow" target="_blank" href="' + line['link'] + '"><span width="100%" style="font-size: 18px;font-family: arial,sans-serif;">' + line['title'] + '</span></a></div>';
+        // info - v_des
+        if ('v_right1' in line) { content += '<div style="line-height:1.3em; max-height:2.5em;">'; }
+        else { content += '<div style="line-height:1.3em; max-height:3.7em;">'; }
+        content += line['v_des'].replace('<br>', '. ') + '</div>';
+        // info - tag
+        if ('v_right1' in line) {
+	        content += '<div><span style="display:inline-block; margin-top:2px; margin-bottom:2px;">';
+	        if ('v_right2' in line) {
+	        	if ('v_right2_link' in line) {	content += '<a rel="noreferrer external nofollow" target="_blank" href="' + line['v_right2_link'] + '"><span style="background-color: #A0522D;font-size: small;color: white;padding: 0px 2px; margin-right:5px; border-radius: 2px 2px;">' + line['v_right2'] + '</span></a>';	}
+	        	else { content += '<span style="background-color: #A0522D;font-size: small; color: white;padding: 0px 2px; margin-right:5px; border-radius: 2px 2px;">' + line['v_right2'] + '</span>'; }
+	        }
+	        content += '<span style="background-color: #A0522D;font-size: small; color: white;padding: 0px 2px; border-radius: 2px 2px;">' + line['v_right1'] + '</span>';
+	        content += '</span></div>';
+        }
+        // info - host
+        content += '<div class="span-host" style="font-weight: bold; font-size: 14px;">' +  line['host'] + '</div></div>';
+        content += '</li>';
+        return content;
+    }
+  
+
+    content = '<li style="list-style:none; line-height:1.2;"><div style="margin-bottom:15px;">';
+    content += '<div><a rel="noreferrer external nofollow" href="' + line['link'] + '" target="_blank" ><span style="font-size: 18px; font-family: arial,sans-serif;">' + line['title'] + '<span></a></div>';
+    content += '<div class="span-des" >' + line['des'] + '</div>';
+    content += '<div class="span-host" style="font-weight: bold; font-size: 13px;">' + line['host']  + line['log'] + '</div>';
+    content += '</div></li>';
+    return content;
+
+}
+
+
+
+var view = [];
+var format_sum = [];
+
+function push_view_main(data) {
+	
+    var ul = document.getElementById("result-ul");
+    var content = '';
+    
+    for (var i = 0; i < data.length; i++) {
+    	data[i]['rate_summary'] = parseInt(data[i]['rate_summary']);
+        data[i]['pos'] = view.length + i;
+        
+        // duplicate item
+        var duplicate = false;
+        for (var j = 0; j < view.length; j++) {
+        	if (data[i]['link'] === view[j]['link']) {
+        		view[j]['info'] += '; ' + data[i]['info'];
+        		duplicate = true; 
+        		break;
+    		}
+        }
+        if (duplicate) {
+            continue;
+        }
+
+        view.push(data[i]);
+    }
+    
+    // sort based on rate
+    view.sort(function (a, b) { return (b['rate_summary'] - a['rate_summary']) * 1000 + (a['pos'] - b['pos']); });
+    
+    // parse
+    if (view.length === 0) { return false; }
+    for (var i = 0; i < view.length; i++) { 
+    	// log rate
+        view[i]['log'] = '';
+        if (log_enabled) {
+        	view[i]['log'] =  ' - ' + view[i]['info'] + ' - ' + view[i]['rate_title'] + '|' + view[i]['rate_des'] + ' - ' + view[i]['rate_summary']; 
+        }
+  
+    	content += render_main(view[i]); 
+    }
+    ul.innerHTML = content;
+    
+    
+    // generate format info
+    
+    format_sum = [];
+    for (var i = 0; i < view.length; i++) {
+		if (!view[i]['des']) {view[i]['des'] = ''};
+        var format_matched = false;
+        for (var j = 0; j < format.length; j++) {
+            if (view[i]['title'].match(format_exp[j]) || view[i]['des'].match(format_exp[j])) {
+                addto_format_sum(format[j]);
+                format_matched = true;
+            }
+        }
+        if (!format_matched) {
+            addto_format_sum(format_other); 
+        }
+    }
+    
+    
+    format_sum.sort(function (a, b) {
+                    if (a[0] === format_other) {
+                    return 1;
+                    }
+                    if (b[0] === format_other) {
+                    return -1;
+                    }
+                    return b[1] - a[1];
+                    });
+    // extract format info
+    var format_filter = document.getElementById("format-filter");
+    var content2 = [];
+    if (format_sum.length >= 2) {
+        for (var i = 0; i < format_sum.length; i++) {
+            var str = '<a id="' + format_sum[i][0] + '" href="#" onclick="return filter_content(\'' + format_sum[i][0] + '\')">' + format_sum[i][0] + "(" + format_sum[i][1] + ")</a>";
+            content2.push(str);
+        }
+        
+        var str = content2.join(' | ');
+        format_filter.innerHTML = str;
+        // format_filter.style.display = 'inline-block';
+    }
+    
+   
+    
+}
+
+var uls = [];
+function push_view_sidebar(item) {
+	
+	if (item['view_type'] === 'view_forum') {
+		uls.push([item['view_type_sidebar_priority'], generate_ul_forum(item)]);
+	} 
+	if (item['view_type'] === 'view_sidebar') {
+		uls.push([item['view_type_sidebar_priority'], generate_ul_sidebar(item)]);
+	} 
+	
+	// sort based on sidebar priority
+    uls.sort(function (a, b) { return parseInt(a[0]) - parseInt(b[0]); } );
+    var uls_str = '';
+    for (var i=0; i<uls.length; i++) {
+    	uls_str += uls[i][1];
+    }
+    
+    // render sidebar result
+    var forum_div = document.getElementById("forum-div");
+    forum_div.innerHTML = uls_str;
+    return;
+}
+
+
+function generate_ul_forum(item) {
+	
+	var forums = item['details']['data'];
+	
+    var content = '<div style="color: rgb(221, 221, 221); margin-top: 15px; margin-left: 10px; margin-right: 10px;">';
+    for (var forum in forums) {
+    	var title = forums[forum]['title'];
+    	var data = forums[forum]['data'];
+    	if (!data) {continue;}
+    	content += '<span class="span-host">' +  title  + ':</span>';
+		content += '<ul>';
+		for (var item in data) {
+			content += '<li><a target="_blank" href="' + data[item]['link'] +  '">'  +   data[item]['title']  +  '</a></li>';
+		}
+		content += '</ul>';
+	}
+	content += '</div>';
+	return content;
+}
+
+
+
+
+
+function generate_ul_sidebar(item) {
+	
+	var lines = item['details']['data'];
+	
+    var content = '<div style="color: rgb(221, 221, 221); margin-top: 15px; margin-left: 10px; margin-right: 10px;">';
+    if (item['view_host_link']) { content += '<a rel="noreferrer external nofollow" target="_blank" href="' + item['view_host_link'] + '"><span class="span-host" style="font-weight:bold;">' + item['view_host'] + '</span></a>';}
+    else { content += '<span class="span-host" style="font-weight:bold;">' + item['view_host'] + '</span>';}
+    content += '<ul style="padding-left: 0px;">';
+    
+    for (var i = 0; i < lines.length; i++) {
+    	line = lines[i];
+        // img
+        content += '<li style="margin-bottom:10px;">';
+        
+        content += '<div style="display: inline-block; width: 20%; line-height:87px; height:90px; text-align:center; border: 1px solid rgba(128,128,128,0.5);">';
+        content += '<a rel="noreferrer external nofollow" href="' + line['link'] + '" target="_blank"><img src="' + line['img_link'] + '" style="vertical-align: middle; max-width:100%; max-height:100%"></a></div>';
+        
+        // info - float right
+	    content += '<div class="priced_item_left" style="margin-left:1%; width:78%">';
+	    if ('v_right1' in line) { 
+	    	content += '<div class="priced_item_right" style="width:120px"><span style="display:inline-block;float:right;">';
+	    	if ('v_right2' in line) {
+	    		if ('v_right2_link' in line) { content += '<a rel="noreferrer external nofollow" target="_blank" href="' + line['v_right2_link'] + '"><span style="background-color: #A0522D;font-size: small;color: white;padding: 0px 2px;border-radius: 2px 2px;">' + line['v_right2'] + '</span></a>'; }
+	    		else { content += '<span style="background-color: #A0522D;font-size: small;color: white;padding: 0px 2px;border-radius: 2px 2px;">' + line['v_right2'] + '</span>'; }
+        	}
+	        content += '<span style="background-color: #A0522D;font-size: small;color: white;padding: 0px 2px;margin-left: 5px;border-radius: 2px 2px;">' + line['v_right1'] + '</span></div>';
+	    }
+        
+        // info - title
+        content += '<div class="title" style="line-height:1.5em; max-height:3em;"><a rel="noreferrer external nofollow" target="_blank" href="' + lines[i]['link'] + '" style="font-weight: bold;"><span width="100%">' + lines[i]['title'] + '</span></a></div>';
+        
+        // info - v_des
+        content += '<div class="des" style="line-height:1.3em; max-height:3.7em;">' + line['v_des'] + '</div>';
+
+        content += '</li>';
+ 
+    }
+    content += '</ul></div>';
+    
+    return content;
+    
+}
+
+
+
+
+
+
+function split_panel() {
+	
+    var forum_div = document.getElementById("forum-div");
+    var forum_panel = document.getElementById("forum-panel");
+    var google_panel = document.getElementById("google-panel");
+    var result_panel_middle = document.getElementById("result-panel-middle");
+    if (!(google_panel.getAttribute("class") === "google-panel-width-backup")) {
+        google_panel.setAttribute("class", "google-panel-width-narrow");
+    }
+    forum_div.style.display = "";
+    forum_panel.style.display = "inline-block";
+    result_panel_middle.setAttribute("class", "result-panel-middle-show");
+    
+    var priced_filter = document.getElementById("priced-filter");
+    priced_filter.innerHTML = 'FORUM & PRINTED BOOK';
+                  
+}
+
+
+
+function notfound_alert() {
+    hide_loading();
+    var search_word = document.getElementById("SearchWord");
+    var input_keyword = search_word.value;
+    var ul = document.getElementById("result-ul");
+    var content = '';
+    
+   	content = '<div style="font-size: 16px;"><br>没有找到与<b>"' + input_keyword + '"</b>相关的文档.<br>可以减少搜索限制或换个书名尝试.</div>';
+    content += '<div style="font-size: 16px;"><br><b>' + input_keyword + '</b> - is not found.<br><br>Suggestions: <br><ul style="line-height: 1.2;margin-top: 10px;"><li>Make sure all words are spelled correctly.</li><li>Try different keywords.</li><li>Try more general keywords.</li></ul></div>';
+
+    ul.innerHTML = content;
+}
+
+
+
+function exceed_alert() {
+
+    var ul = document.getElementById("result-ul");
+    var content = '<div style="font-size: 16px;"><br><span style="font-weight:bold;">Information</span><br><br> - You have reached search limits today, some results will not be able to show. Please try again tomorrow. Thanks.</div>' + '<div style="font-size: 17px;"><br><span style="font-size: 18px; font-weight:bold">提示</span><br><br> - 您的查询已达到今日的最高次数, 一些结果将无法显示. 请明日再试. 谢谢.</div>';
+    
+    ul.innerHTML = content;
+}
+
+function tooshort_alert() {
+
+    var ul = document.getElementById("result-ul");
+    var content = '<div style="font-size: 16px;"><br><span style="font-weight:bold;">Information</span><br><br> - Invalid Book Title. Please try again. Thanks.</div>' + '<div style="font-size: 17px;"><br><span style="font-size: 18px; font-weight:bold">提示</span><br><br> - 您查询的图书标题长度过短, 请重试. 谢谢.</div>';
+    
+    ul.innerHTML = content;
+}
+
+
+function filter_content(str) {
+    
+    var ul = document.getElementById("result-ul");
+    var google_div = document.getElementById('google-div');
+    var format_filters = document.getElementById('format-filter');
+    var format_fs = format_filters.getElementsByTagName('a');
+    for (var i = 0; i < format_fs.length; i++) {
+        if (format_fs[i].getAttribute('id') === str) {
+            format_fs[i].setAttribute("style", "font-weight: bolder;");
+        }
+        else {
+            format_fs[i].setAttribute("style", "font-weight: normal;");
+        }
+        
+    }
+    
+    
+    var filtered = [];
+    if (str === format_other) {
+        filtered = filter_other();
+    }
+    else
+    {
+        filtered = filter_format(str);
+    }
+    
+    
+    var f_content = '';
+    for (var i = 0; i < filtered.length; i++) {
+        f_content += render_main(filtered[i]);
+    }
+    ul.innerHTML = f_content;
+    google_div.scrollTop = 0;
+    
+    dls_show = [];
+    return false;
+}
+
+
+function filter_format(str) {
+    
+    var str_exp = get_format_exp(str);
+    var cached = [];
+
+    for (var i = 0; i < view.length; i++) {
+        var match = false;
+        if (view[i]['title'].match(str_exp) || view[i]['des'].match(str_exp)) {
+            match = true;
+        }
+        if (!match) {continue;}
+        
+        var item = Object.assign({}, view[i]);
+        var title = item['title'];
+        var des = item['des'];
+        var replaced_title = '<span class="highlight">' + title.match(str_exp) + '</span>';
+        var replaced_des = '<span class="highlight">' + des.match(str_exp) + '</span>';
+        item['title'] = title.split(str_exp).join(replaced_title);
+        item['des'] = des.split(str_exp).join(replaced_des);
+        cached.push(item);
+    }
+    return cached;
+}
+
+
+ 
+
+function filter_other() {
+    
+    var cached = [];
+    for (var i = 0; i < view.length; i++) {
+        var match = false;
+        for (var j = 0; j < format.length; j++) {
+            if (view[i]['title'].match(format_exp[j]) || view[i]['des'].match(format_exp[j])) {
+                match = true;
+                break;
+            }
+        }
+        
+        if (!match) {
+            cached.push(view[i]);
+        }
+    }
+    return cached;
+}
+
+
+
+function hide_loading() {
+    
+    var format_filter = document.getElementById("format-filter");
+    if (format_filter) { format_filter.style.display = 'inline-block'; }
+    
+    var format_loading = document.getElementById("format-loading");
+    if (format_loading) { format_loading.style.display = 'none'; }
+    
+    var loading_icon = document.getElementById("loading-icon");
+    if (loading_icon) { loading_icon.style.display = 'none'; }
+    
+    var loading_img = document.querySelector("#loading-icon img");
+    if (loading_img) { loading_img.style = ''; }
+}
+
+function more_loading() {
+    
+    var format_filter = document.getElementById("format-filter");
+    if (format_filter) { format_filter.style.display = 'none'; }
+    
+    var format_loading = document.getElementById("format-loading");
+    if (format_loading) { format_loading.style.display = 'inline-block'; }
+    
+    var loading_img = document.querySelector("#loading-icon img");
+    if (loading_img) { loading_img.style.width = '35px'; }
+}
+
+
+function localbook_click(link) {
+    var p_div = link.parentElement.parentElement;
+    var dls = p_div.querySelectorAll('.localbook_download');
+    for(var i=0; i<dls.length; i++) {
+    	var dl = dls[i];
+		var pos = dls_show.indexOf(dl.href);
+		if ( pos >= 0 ) {
+			dls_show.splice(pos, 1);
+		} else {
+			dls_show.push(dl.href);
+		}
+    }
+	localbook_refresh();
+    return false;
+}
+
+function localbook_refresh() {
+	var dls = document.querySelectorAll('.localbook_download');
+	for (var i=0; i<dls.length; i++) {
+		if ( dls_show.indexOf(dls[i].href) >= 0 ) {
+			dls[i].style.display = 'inline-block';
+		} else {
+			dls[i].style.display = 'none';
+		}
+	}
+}
+
+
+function wechat_overlay_load() {
+	if (document.body) {
+        var element = '<div id="wechat-overlay" onclick="wechat_overlay_hide();" style="display:none; position: absolute; width: 100%; height: 100%; top: 0px; left: 0px; z-index: 100; text-align:center; vertical-align:middle; background-color: rgba(0,0,0,0); padding-top: 150px;"><img style="max-width:100%; border: solid 2px grey; border-radius: 5px 5px;" src="images/wechat_public_barcode3.gif"></div>';
+        document.body.innerHTML += element;
+    }
+    return true;
+}
+
+
+function wechat_overlay_show() {
+    var wechat_overlay = document.getElementById("wechat-overlay");
+    if (wechat_overlay) { wechat_overlay.style.display = 'block'; return false; }
+    return true;
+}
+
+function wechat_overlay_hide() {
+    var wechat_overlay = document.getElementById("wechat-overlay");
+    if (wechat_overlay) { wechat_overlay.style.display = 'none'; }
+    return true;
+}
+
+
+function init_ip() {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+            var received_text = xmlhttp.responseText;
+            try {
+            	var result_array = JSON.parse(received_text);
+            	g_ip = result_array['ip'];
+            }
+            catch(e) {return;}
+        }
+    };
+	xmlhttp.open("GET", "//freegeoip.net/json/", true);
+	xmlhttp.send();
+}
+
+</script>
+
+
+
+
+</body>
+</html>
